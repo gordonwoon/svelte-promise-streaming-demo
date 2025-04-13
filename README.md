@@ -28,7 +28,7 @@ SvelteKit's streaming feature works by:
 
 You can try this demo without any setup by visiting the CodeSandbox link below:
 
-[Open in CodeSandbox](https://codesandbox.io/p/github/[your-username]/svelte-streaming-demo)
+[Open in CodeSandbox](https://codesandbox.io/p/github/gordonwoon/svelte-promise-streaming-demo)
 
 ### Local Development
 
@@ -48,4 +48,5 @@ Visit `http://localhost:5173` to see the demo in action.
 - When visiting the streaming example, the page will render immediately, and sections will update as their data becomes available.
 
 This project helps understand the practical implementation of the concepts explained in the [SvelteKit documentation on streaming with promises](https://svelte.dev/docs/kit/load#streaming-with-promises).
+
 # svelte-promise-streaming-demo
