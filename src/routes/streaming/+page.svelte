@@ -12,6 +12,11 @@
 	let mediumDataLoadedAt: string | null = null;
 	let slowDataLoadedAt: string | null = null;
 
+	// Store actual API response data for visualization
+	let fastDataResponse: any = null;
+	let mediumDataResponse: any = null;
+	let slowDataResponse: any = null;
+
 	// Timeline events for visualization
 	let timelineEvents: { label: string; time: string; color: string }[] = [];
 
@@ -109,6 +114,7 @@
 		// Fast data promise
 		Promise.resolve(data.fastData).then(result => {
 			fastDataLoadedAt = new Date().toISOString();
+			fastDataResponse = result; // Store the actual API response
 
 			// Update timeline
 			timelineEvents = [
@@ -123,20 +129,25 @@
 			// Update network waterfall
 			networkRequests = networkRequests.map(req =>
 				req.name === 'Fast API'
-					? { ...req, endTime: fastDataLoadedAt, status: 'complete' }
+					? { ...req, endTime: fastDataLoadedAt || undefined, status: 'complete' }
 					: req
 			);
 
-			// Add stream chunk
-			addStreamChunk(
-				`<div id="fast-data">${JSON.stringify(result).substring(0, 50)}...</div>`,
-				'data'
-			);
+				// Create a realistic stream chunk with the actual API data
+			const htmlChunk = `&lt;script&gt;
+  // Fast data chunk (${formatTime(fastDataLoadedAt)})
+  document.getElementById('fast-data-placeholder').innerHTML =
+    \`&lt;p&gt;${result.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: ${formatTime(result.timestamp)}&lt;/p&gt;\`;
+&lt;/script&gt;`;
+
+			addStreamChunk(htmlChunk, 'data');
 		});
 
 		// Medium data promise
 		Promise.resolve(data.mediumData).then(result => {
 			mediumDataLoadedAt = new Date().toISOString();
+			mediumDataResponse = result; // Store the actual API response
 
 			// Update timeline
 			timelineEvents = [
@@ -151,20 +162,25 @@
 			// Update network waterfall
 			networkRequests = networkRequests.map(req =>
 				req.name === 'Medium API'
-					? { ...req, endTime: mediumDataLoadedAt, status: 'complete' }
+					? { ...req, endTime: mediumDataLoadedAt || undefined, status: 'complete' }
 					: req
 			);
 
-			// Add stream chunk
-			addStreamChunk(
-				`<div id="medium-data">${JSON.stringify(result).substring(0, 50)}...</div>`,
-				'data'
-			);
+				// Create a realistic stream chunk with the actual API data
+			const htmlChunk = `&lt;script&gt;
+  // Medium data chunk (${formatTime(mediumDataLoadedAt)})
+  document.getElementById('medium-data-placeholder').innerHTML =
+    \`&lt;p&gt;${result.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: ${formatTime(result.timestamp)}&lt;/p&gt;\`;
+&lt;/script&gt;`;
+
+			addStreamChunk(htmlChunk, 'data');
 		});
 
 		// Slow data promise
 		Promise.resolve(data.slowData).then(result => {
 			slowDataLoadedAt = new Date().toISOString();
+			slowDataResponse = result; // Store the actual API response
 
 			// Update timeline
 			timelineEvents = [
@@ -179,22 +195,26 @@
 			// Update network waterfall
 			networkRequests = networkRequests.map(req =>
 				req.name === 'Slow API'
-					? { ...req, endTime: slowDataLoadedAt, status: 'complete' }
+					? { ...req, endTime: slowDataLoadedAt || undefined, status: 'complete' }
 					: req
-			);
+				);
 
-			// Add stream chunk
-			addStreamChunk(
-				`<div id="slow-data">${JSON.stringify(result).substring(0, 50)}...</div>`,
-				'data'
-			);
+				// Create a realistic stream chunk with the actual API data
+			const htmlChunk = `&lt;script&gt;
+  // Slow data chunk (${formatTime(slowDataLoadedAt)})
+  document.getElementById('slow-data-placeholder').innerHTML =
+    \`&lt;p&gt;${result.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: ${formatTime(result.timestamp)}&lt;/p&gt;\`;
+&lt;/script&gt;`;
+
+			addStreamChunk(htmlChunk, 'data');
 
 			// Add final HTML chunk
 			addStreamChunk(
 				'&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;',
 				'html'
 			);
-			});
+		});
 
 		// Client-side script for tab functionality - moved from separate script tag
 		// We need to wait for the DOM to be ready
@@ -309,6 +329,73 @@
 			This improves perceived performance, since the initial page load is much faster (not waiting for all data) and users
 			see content appearing progressively.
 		</p>
+
+		<div class="code-example">
+			<h3>What Actually Gets Sent Over the Wire</h3>
+			<div class="wire-chunks">
+				<div class="chunk">
+					<span class="chunk-time">0ms</span>
+					<pre class="chunk-content html-chunk">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;...&lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id="app"&gt;
+      &lt;!-- Initial content with placeholders --&gt;
+      &lt;div id="fast-data-placeholder"&gt;Loading fast data...&lt;/div&gt;
+      &lt;div id="medium-data-placeholder"&gt;Loading medium data...&lt;/div&gt;
+      &lt;div id="slow-data-placeholder"&gt;Loading slow data...&lt;/div&gt;
+    </pre>
+					<span class="chunk-label">Initial HTML with placeholders</span>
+				</div>
+
+				{#if fastDataResponse}
+				<div class="chunk">
+					<span class="chunk-time">~500ms</span>
+					<pre class="chunk-content js-chunk">
+&lt;script&gt;
+  // When fast data resolves
+  document.getElementById('fast-data-placeholder').innerHTML =
+    `&lt;p&gt;{fastDataResponse.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: {formatTime(fastDataResponse.timestamp)}&lt;/p&gt;`;
+&lt;/script&gt;</pre>
+					<span class="chunk-label">Fast data chunk</span>
+				</div>
+				{/if}
+
+				{#if mediumDataResponse}
+				<div class="chunk">
+					<span class="chunk-time">~2000ms</span>
+					<pre class="chunk-content js-chunk">
+&lt;script&gt;
+  // When medium data resolves
+  document.getElementById('medium-data-placeholder').innerHTML =
+    `&lt;p&gt;{mediumDataResponse.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: {formatTime(mediumDataResponse.timestamp)}&lt;/p&gt;`;
+&lt;/script&gt;</pre>
+					<span class="chunk-label">Medium data chunk</span>
+				</div>
+				{/if}
+
+				{#if slowDataResponse}
+				<div class="chunk">
+					<span class="chunk-time">~5000ms</span>
+					<pre class="chunk-content js-chunk">
+&lt;script&gt;
+  // When slow data finally resolves
+  document.getElementById('slow-data-placeholder').innerHTML =
+    `&lt;p&gt;{slowDataResponse.message}&lt;/p&gt;
+     &lt;p class="timestamp"&gt;Data loaded at: {formatTime(slowDataResponse.timestamp)}&lt;/p&gt;`;
+&lt;/script&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+					<span class="chunk-label">Slow data chunk & closing HTML</span>
+				</div>
+				{/if}
+			</div>
+			<p class="note">Note: This is a simplified representation showing actual API response data. The real server implementation includes additional hydration code.</p>
+		</div>
 	</div>
 </div>
 
